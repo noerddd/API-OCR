@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OTOBOOK</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-top: 20px;
+        }
+
+        button, input[type="text"], form {
+            margin: 10px 0;
+            padding: 10px;
+            width: 80%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #result, #books {
+            width: 80%;
+            max-width: 600px;
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            white-space: pre-wrap;
+        }
+
+        input[type="text"] {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to OTOBOOK</h1>
+    <button onclick="captureImage()">Capture Image</button>
+    <button onclick="fetchBooks()">Fetch Books</button>
+    <div id="result"></div>
+    <div id="books"></div>
+
+    <h2>Edit Extracted Metadata</h2>
+    <form id="editMetadataForm">
+        <input type="text" id="title" placeholder="Title" required><br>
+        <input type="text" id="author" placeholder="Author" required><br>
+        <input type="text" id="isbn" placeholder="ISBN" required><br>
+        <input type="text" id="synopsis" placeholder="Synopsis" required><br>
+        <input type="text" id="keywords" placeholder="Keywords" required><br>
+        <button type="submit">Save Book</button>
+    </form>
+
+    <script>
+        async function captureImage() {
+            let response = await fetch('/capture', { method: 'POST' });
+            let data = await response.json();
+            let extractResponse = await fetch('/extract', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image_path: data.image_path })
+            });
+            let result = await extractResponse.json();
+            document.getElementById('title').value = result.title;
+            document.getElementById('author').value = result.author;
+            document.getElementById('isbn').value = result.isbn;
+            document.getElementById('synopsis').value = result.synopsis;
+            document.getElementById('keywords').value = result.keywords;
+            document.getElementById('result').innerText = JSON.stringify(result, null, 2);
+        }
+
+        async function fetchBooks() {
+            let response = await fetch('/books', { method: 'GET' });
+            let books = await response.json();
+            document.getElementById('books').innerText = JSON.stringify(books, null, 2);
+        }
+
+        document.getElementById('editMetadataForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            let bookData = {
+                title: document.getElementById('title').value,
+                author: document.getElementById('author').value,
+                isbn: document.getElementById('isbn').value,
+                synopsis: document.getElementById('synopsis').value,
+                keywords: document.getElementById('keywords').value
+            };
+            let response = await fetch('/add_book', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(bookData)
+            });
+            let result = await response.json();
+            alert(result.message);
+        });
+    </script>
+</body>
+</html>
